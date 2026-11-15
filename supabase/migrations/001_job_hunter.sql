@@ -202,3 +202,14 @@ grant execute on function jh_run_save(jsonb, text) to anon, authenticated;
 -- Tightening (applied as a second migration): helpers are only called from inside the functions above.
 revoke execute on function jh_can_run(text) from anon, authenticated, public;
 revoke execute on function jh_is_owner() from anon, public;
+
+-- The app registers the hash of its CRON_SECRET itself when the owner signs in (see lib/session.ts).
+create or replace function jh_set_cron_hash(p_hash text) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not jh_is_owner() then raise exception 'not allowed'; end if;
+  if p_hash !~ '^[0-9a-f]{64}$' then raise exception 'bad hash'; end if;
+  update jh_settings set cron_secret_hash = p_hash where id = 1;
+end $$;
+revoke all on function jh_set_cron_hash(text) from public, anon;
+grant execute on function jh_set_cron_hash(text) to authenticated;

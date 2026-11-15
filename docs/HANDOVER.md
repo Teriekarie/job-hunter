@@ -29,7 +29,7 @@
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://fabxgpnhbonuhudybzbo.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the project's publishable key |
-| `CRON_SECRET` | long random text; its sha256 must match `jh_settings.cron_secret_hash` |
+| `CRON_SECRET` | long random text (24+ characters). The app saves its fingerprint to the database automatically the next time the owner opens any page. To change it: edit it in Vercel, redeploy, open the app once. |
 | `ANTHROPIC_API_KEY` | optional; turns on AI scoring and letters |
 
 ## Security
