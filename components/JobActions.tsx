@@ -55,6 +55,8 @@ export function LetterModal({ job, onClose }: { job: CardJob; onClose: () => voi
       {text == null ? <p className="muted">Writing your letter…</p> : (
         <>
           {by === 'template' && <p className="notice warn" style={{ margin: 0 }}>This is a starter letter built from your CV. Fill in the part in [square brackets] and adjust it for this job. With an AI key added, the app writes a tailored letter for each job.</p>}
+          {by.startsWith('ai-error') && <p className="notice bad" style={{ margin: 0 }}>The AI could not write this letter, so a starter letter is shown. Reason: {by.slice(10)}</p>}
+          {by === 'ai' && <p className="notice good" style={{ margin: 0 }}>Written by AI for this job from your CV. Read it through and adjust anything before sending.</p>}
           <label className="sr" htmlFor="letter">Cover letter</label>
           <textarea id="letter" className="inp" rows={18} value={text} onChange={(e) => setText(e.target.value)} />
           <div className="row">

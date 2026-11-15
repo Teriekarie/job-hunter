@@ -81,11 +81,20 @@ export async function getLetter(jobId: string, rewrite = false): Promise<{ text:
   const { supabase } = await requireOwner();
   const { data: job } = await supabase.from('jh_jobs').select('*').eq('id', jobId).single();
   if (!job) return { text: '', by: '' };
-  if (job.cover_letter && !rewrite) return { text: job.cover_letter, by: 'saved' };
-  let text = templateLetter(job); let by = 'template';
   const ai = await canUseAi(supabase);
+  const savedIsTemplate = !!job.cover_letter && job.cover_letter.includes('[Add one line');
+  // A saved letter is reused, unless it is the starter template and the AI is now available.
+  if (job.cover_letter && !rewrite && !(savedIsTemplate && ai.ok)) return { text: job.cover_letter, by: savedIsTemplate ? 'template' : 'saved' };
+  let text = templateLetter(job); let by = 'template';
   if (ai.ok) {
-    try { const r = await aiCoverLetter(job, ai.profile.cv_text, voiceSamples()); await logAi(supabase, 'letter', r.costUsd); if (r.text) { text = r.text; by = 'ai'; } } catch { /* keep the template */ }
+    try {
+      const r = await aiCoverLetter(job, ai.profile.cv_text, voiceSamples());
+      await logAi(supabase, 'letter', r.costUsd);
+      if (r.text) { text = r.text; by = 'ai'; }
+    } catch (e) {
+      console.error('AI cover letter failed:', (e as Error).message);
+      by = `ai-error: ${(e as Error).message}`.slice(0, 300);
+    }
   }
   await supabase.from('jh_jobs').update({ cover_letter: text }).eq('id', jobId);
   return { text, by };
@@ -103,13 +112,13 @@ export async function getEmail(jobId: string, opts: { rewrite?: boolean; followU
   if (opts.followUp) {
     const t = templateFollowUp(job, fmtDate(job.applied_at) || 'recently');
     const ai = await canUseAi(supabase);
-    if (ai.ok) { try { const a = await aiEmail(job, ai.profile.cv_text, true); if (a) { await logAi(supabase, 'follow-up', a.costUsd); return { subject: t.subject, body: a.body }; } } catch { /* template */ } }
+    if (ai.ok) { try { const a = await aiEmail(job, ai.profile.cv_text, true); if (a) { await logAi(supabase, 'follow-up', a.costUsd); return { subject: t.subject, body: a.body }; } } catch (e) { console.error('AI email failed:', (e as Error).message); } }
     return t;
   }
   if (job.email_body && !opts.rewrite) return { subject: job.email_subject, body: job.email_body };
   let out = templateEmail(job);
   const ai = await canUseAi(supabase);
-  if (ai.ok) { try { const a = await aiEmail(job, ai.profile.cv_text); if (a) { await logAi(supabase, 'email', a.costUsd); out = { subject: a.subject, body: a.body }; } } catch { /* template */ } }
+  if (ai.ok) { try { const a = await aiEmail(job, ai.profile.cv_text); if (a) { await logAi(supabase, 'email', a.costUsd); out = { subject: a.subject, body: a.body }; } } catch (e) { console.error('AI email failed:', (e as Error).message); } }
   await supabase.from('jh_jobs').update({ email_subject: out.subject, email_body: out.body }).eq('id', jobId);
   return out;
 }

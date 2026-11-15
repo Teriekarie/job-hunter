@@ -31,23 +31,41 @@ Reply with ONLY a JSON array, one object per job, in the same order:
   return { jobs: out, costUsd: r.costUsd };
 }
 
-type LetterJob = { title: string; company: string; description: string | null; eligibility_label?: string | null; required_subject?: string | null };
+type LetterJob = {
+  title: string; company: string; description: string | null; eligibility_label?: string | null; required_subject?: string | null;
+  match_reasons?: string[] | null; gaps?: { gap: string; closable: boolean }[] | null; requirements?: string[] | null;
+};
+
+// Never reveal where she works now: talk about what she did, not that she is still there.
+const EMPLOYER_RULE = `- NEVER say or imply where she currently works. Do not write "currently", "at present", "in my current role", "I am the ... at ...", or name an employer together with "now"/"today".
+  Describe each employer's work as past achievements instead: "At Global Performance Index (GPI), I led ...", "In my previous role at ..., I managed ...", "I have ...".
+  Do not mention dates or the word "Present".`;
 
 export async function aiCoverLetter(job: LetterJob, cvText: string, voice: string) {
   const system = `You write cover letters for Theresa Karamor.
 ${RULES}
-- 4–5 short paragraphs, 200–300 words. Open with the exact job title and one specific line about this company's need.
-- Use 2–3 achievements from the CV that match the job's top requirements.
-- Close with her location (Lagos, UTC+1) and a simple ask for a call.
-- Match the warm, confident, results-led voice of the sample letters, but never copy their sentences.
+${EMPLOYER_RULE}
+- Length: 5–6 paragraphs, 380–480 words. Rich and specific, never generic.
+- Paragraph 1: the exact job title and company, plus one or two sentences showing she understands what this company does and what this role must achieve (only from the job text).
+- Paragraphs 2–4: map her experience to the job's top 3–4 requirements, one theme per paragraph. Each paragraph names the tools and gives a concrete result with its number from the CV (e.g. 60% of manual tasks automated, 35% faster turnaround, zero lead leakage, 70% of inbound interactions handled, 50% faster reporting). Use the most relevant employers and projects: GPI (analytics, KPI reporting, workflow automation, intranet, digitization, staff training), Descasio (20+ business processes, 15+ client implementations), Macaulay Gidado (AI automation, voice agents, CRM, data pipelines), the Selected Projects.
+- If there is an important gap, address it honestly in one sentence with a related strength (only if true from the CV).
+- Paragraph 5: how she works (maps the process before building, documents, collaborates with Product/QA/Engineering, trains users) and what she would deliver in the first months.
+- Close: works remotely from Lagos, Nigeria (UTC+1) and is comfortable overlapping with the team's hours; a confident ask for a conversation; "Kind regards, Theresa Karamor".
+- No placeholders in square brackets. Plain, warm, confident English, results-led, like the voice samples. Never copy their sentences.
 Reply with the letter text only.`;
-  const user = `CV:\n${cvText}\n\nVOICE SAMPLES (tone only):\n${voice}\n\nJOB: ${job.title} at ${job.company}\n${(job.description || '').slice(0, 8000)}`;
-  return ask('write', system, user);
+  const fit = [
+    job.requirements?.length ? `KEY REQUIREMENTS:\n- ${job.requirements.join('\n- ')}` : '',
+    job.match_reasons?.length ? `WHY SHE FITS (from scoring):\n- ${job.match_reasons.join('\n- ')}` : '',
+    job.gaps?.length ? `GAPS:\n- ${job.gaps.map((g) => g.gap).join('\n- ')}` : '',
+  ].filter(Boolean).join('\n\n');
+  const user = `CV:\n${cvText}\n\nVOICE SAMPLES (tone only):\n${voice}\n\nJOB: ${job.title} at ${job.company}\n${fit}\n\nJOB DESCRIPTION:\n${(job.description || '').slice(0, 9000)}`;
+  return ask('write', system, user, 4000);
 }
 
 export async function aiEmail(job: LetterJob, cvText: string, followUp = false) {
   const system = `You write short ${followUp ? 'follow-up' : 'job application'} emails for Theresa Karamor to send herself.
 ${RULES}
+${EMPLOYER_RULE}
 - ${followUp ? '60–100 words: polite check-in on an application already sent, restate interest, offer to share more.' : '90–150 words: say which role, two matching strengths from the CV, mention the attached CV and cover letter, her links from the CV, location Lagos (UTC+1).'}
 - Where she must add something herself, write it in [square brackets].
 Reply with ONLY JSON: {"subject":"...","body":"..."}`;
