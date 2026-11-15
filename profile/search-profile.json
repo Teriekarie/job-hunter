@@ -1,0 +1,174 @@
+{
+  "name": "Theresa Doutimi Karamor (Thess)",
+  "location": "Lagos, Nigeria (UTC+1)",
+  "workAuthorization": "Nigeria only",
+  "hours": "Any (US, UK/EU, Asia all fine)",
+  "salaryRule": "Show all salaries, including undisclosed. Rank higher pay above lower pay, but never hide a job because of pay.",
+  "jobTypes": [
+    "full-time",
+    "contract",
+    "part-time",
+    "consulting"
+  ],
+  "freshnessDays": 14,
+  "eligibilityPriority": [
+    "Worldwide",
+    "Nigeria eligible",
+    "Africa eligible",
+    "EMEA",
+    "Relocation supported",
+    "Sponsorship possible",
+    "Unclear"
+  ],
+  "roleFamilies": {
+    "Automation": [
+      "Automation Specialist",
+      "AI Automation Specialist",
+      "Intelligent Automation Analyst",
+      "Workflow Automation Consultant",
+      "Automation Architect",
+      "Business Process Automation Specialist",
+      "Automation Engineer",
+      "No-code Developer",
+      "n8n",
+      "Make.com",
+      "Zapier"
+    ],
+    "Data & BI": [
+      "Data Analyst",
+      "BI Analyst",
+      "Business Intelligence Developer",
+      "Analytics Lead",
+      "Reporting Analyst",
+      "Data & Insights Specialist",
+      "Power BI"
+    ],
+    "CRM & RevOps": [
+      "CRM Specialist",
+      "CRM Automation Specialist",
+      "CRM Administrator",
+      "Revenue Operations Specialist",
+      "Sales Operations Specialist",
+      "Marketing Automation Specialist",
+      "GTM Engineer",
+      "HubSpot Admin",
+      "Zoho Developer"
+    ],
+    "AI & Agents": [
+      "AI Solutions Specialist",
+      "AI Operations Specialist",
+      "AI Agent Developer",
+      "AI Workflow Engineer",
+      "LLM Automation Specialist",
+      "AI Implementation Consultant",
+      "Agentic AI"
+    ],
+    "Product & Business Ops": [
+      "Product Operations Specialist",
+      "Business Systems Analyst",
+      "Digital Transformation Analyst",
+      "Implementation Specialist",
+      "Implementation Engineer",
+      "Solutions Consultant",
+      "Technical Project Manager"
+    ],
+    "Customer Ops": [
+      "Customer Success Operations",
+      "Customer Experience Analyst",
+      "Technical Support Specialist",
+      "Customer Operations Specialist",
+      "Service Delivery Analyst"
+    ]
+  },
+  "skills": {
+    "automation": [
+      "n8n",
+      "Make",
+      "Zapier",
+      "Pabbly",
+      "GoHighLevel",
+      "Power Automate",
+      "Power Apps",
+      "Power Platform"
+    ],
+    "crmAndSystems": [
+      "Zoho CRM",
+      "Zoho Mail",
+      "Zoho Books",
+      "Airtable",
+      "Softr",
+      "Formstack",
+      "Notion",
+      "Webflow",
+      "SharePoint",
+      "Microsoft Lists",
+      "Microsoft Forms"
+    ],
+    "data": [
+      "SQL",
+      "Python",
+      "pandas",
+      "NumPy",
+      "Power BI",
+      "Tableau",
+      "Looker Studio",
+      "Streamlit",
+      "ETL",
+      "data modelling"
+    ],
+    "integrations": [
+      "REST APIs",
+      "webhooks",
+      "JSON",
+      "Twilio",
+      "Stripe",
+      "Slack",
+      "Calendly",
+      "Google Workspace",
+      "Lemlist",
+      "Fireflies"
+    ],
+    "ai": [
+      "OpenAI API",
+      "Anthropic Claude",
+      "LangChain",
+      "Groq",
+      "Voiceflow",
+      "voice AI agents",
+      "chatbots",
+      "NLP APIs"
+    ],
+    "business": [
+      "process re-engineering",
+      "client implementation & onboarding",
+      "KPI dashboards",
+      "customer journey mapping",
+      "cross-functional collaboration"
+    ]
+  },
+  "equivalentTools": {
+    "Workato": [
+      "Make",
+      "n8n",
+      "Zapier"
+    ],
+    "HubSpot": [
+      "GoHighLevel",
+      "Zoho CRM"
+    ],
+    "Salesforce": [
+      "Zoho CRM",
+      "GoHighLevel"
+    ],
+    "Looker": [
+      "Power BI",
+      "Tableau"
+    ],
+    "Braze/CleverTap": [
+      "GoHighLevel email/SMS sequences"
+    ]
+  },
+  "avoid": [],
+  "learnedPreferences": [],
+  "yearsExperience": 5
+}

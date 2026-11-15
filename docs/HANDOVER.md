@@ -1,0 +1,50 @@
+# Job Hunter: handover
+
+## What was built (v1)
+- Next.js 15 app (App Router, TypeScript, Tailwind 4) in this folder.
+- Database: the existing Supabase project **thess-content-manager**. All tables start with `jh_` and nothing in the content-manager tables was changed.
+  Sign-in reuses the account already in that project (owner id stored in `jh_settings`), so no new user or profile row was created.
+- Daily automatic search via Vercel Cron (`vercel.json`, 05:00 UTC = 06:00 Lagos) calling `/api/cron`.
+
+## Where things live
+| Path | What |
+|---|---|
+| `lib/sources/` | One file per job board. Add a board: write a file returning `RawJob[]`, add it to `lib/sources/index.ts`. |
+| `lib/pipeline/relevance.ts` | Which titles count as her kind of role. |
+| `lib/pipeline/eligibility.ts` | Can she apply from Nigeria? Board location fields first, then job text. |
+| `lib/pipeline/trust.ts` | Verified / Needs review / High risk, with evidence. |
+| `lib/pipeline/apply.ts` | Detects email applications and required subject lines. |
+| `lib/pipeline/score.ts` | Rule-based fit score (weights from architecture §6). |
+| `lib/pipeline/run.ts` | The whole search: collect → filter role → merge duplicates → freshness/deadline/closed/location → trust → score. |
+| `lib/ai/` | The only code that calls the Claude API (scoring, letters, emails). Off unless `ANTHROPIC_API_KEY` is set. |
+| `lib/letters.ts` | Template letters/emails used without AI. Every sentence comes from the CV. |
+| `lib/run-server.ts` | Runs a search and saves it (used by the button and the daily cron). |
+| `app/actions.ts` | Everything the buttons do (stages, notes, letters, add-a-job, profile). |
+| `supabase/migrations/001_job_hunter.sql` | Tables, owner-only security rules, and the two save/load functions. |
+| `profile/` | CV, cover-letter voice samples, search profile. Copied into the database on first sign-in; after that, edit on the Profile page. |
+| `scripts/dry-run.ts` | `NODE_USE_ENV_PROXY=1 npm run search:dry` tests the search against live boards without saving. |
+
+## Environment variables (Vercel → Project → Settings → Environment Variables)
+| Name | Value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://fabxgpnhbonuhudybzbo.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the project's publishable key |
+| `CRON_SECRET` | long random text; its sha256 must match `jh_settings.cron_secret_hash` |
+| `ANTHROPIC_API_KEY` | optional; turns on AI scoring and letters |
+
+## Security
+- Every `jh_` table has Row Level Security: only the owner account can read or write. Tested: without sign-in every table reads empty and the search functions refuse.
+- The daily search proves itself with `CRON_SECRET`; only its hash is in the database.
+- No secret keys are in the code.
+
+## Test results (15 Nov 2026)
+- Live search: all 7 boards answered; ~1,525 jobs → 110 in her role types → 76 dropped (location 60+, too old) → 12 saved.
+- Re-running the search added 0 jobs (no duplicates).
+
+## Known limits
+- LinkedIn, Indeed, Jobberman, Jobgurus and Google have no permitted API: covered by search shortcut buttons + "Add a job I found".
+- Himalayas limits free calls; if it is busy the run logs it and carries on. A free Himalayas developer key would raise the limit.
+- Remotive delays its jobs by 24 hours (their rule).
+- Without an AI key, scores use keyword rules and letters are templates with [square bracket] parts to fill.
+- Most jobs show "Legit check: needs review" because they are on one board only; that is normal, not a warning.
+- Vercel Hobby plan runs crons once a day, within the hour; the search must finish within 5 minutes (it takes about 10 seconds).
