@@ -1,7 +1,7 @@
 # Job Hunter: how to use it
 
 ## Every day (about 10 minutes)
-1. Open the app and sign in (same email and password as your content manager app).
+1. Open https://job-hunter-teriekarie-8558.vercel.app and sign in (same email and password as your content manager app).
 2. The **daily search** has already run at about 6:00am Lagos time. New jobs are in the **New** tab, best match first.
    To search again any time, click **Find new jobs now** (takes about a minute).
 3. For each job, read the card. Click **View full details** for everything: salary, who can apply and why,

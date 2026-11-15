@@ -1,5 +1,9 @@
 # Job Hunter: handover
 
+## Live app
+- https://job-hunter-teriekarie-8558.vercel.app (Vercel project `job-hunter`, account teriekarie-8558)
+- Code: https://github.com/Teriekarie/job-hunter (private). Every push to `main` deploys automatically.
+
 ## What was built (v1)
 - Next.js 15 app (App Router, TypeScript, Tailwind 4) in this folder.
 - Database: the existing Supabase project **thess-content-manager**. All tables start with `jh_` and nothing in the content-manager tables was changed.
