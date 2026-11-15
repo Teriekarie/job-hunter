@@ -46,7 +46,7 @@
 - Re-running the search added 0 jobs (no duplicates).
 
 ## AI and spending
-- AI is optional (`ANTHROPIC_API_KEY`). Scoring uses Claude Haiku 5.5 (fast, very cheap); letters and emails use Claude Opus 5.5 (best writing) (change with `AI_MODEL_SCORE` / `AI_MODEL_WRITE`).
+- AI is optional (`ANTHROPIC_API_KEY`). Scoring uses Claude Haiku 5.5 (fast, very cheap); letters and emails use Claude Sonnet 5.5 (cheaper; set `AI_MODEL_WRITE=claude-opus-5-5` for the very best) (change with `AI_MODEL_SCORE` / `AI_MODEL_WRITE`).
 - By default AI is used only when she clicks (cover letter, email, "Check fit with AI"). "Score new jobs with AI during each search" is an opt-in on the Profile page.
 - Monthly AI limit (default $3) is enforced in the app: every AI cost is logged (`jh_runs.ai_cost_usd`, `jh_ai_usage`) and the app falls back to rules/templates once the month's total reaches the limit. Also set a spend limit in the Anthropic Console as a second safety net.
 
