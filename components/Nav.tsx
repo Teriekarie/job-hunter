@@ -7,7 +7,7 @@ export default function Nav({ current }: { current: string }) {
   return (
     <header className="topbar">
       <div className="topbar-in">
-        <Link href="/" className="brand" aria-label="Job Hunter home"><span className="mark" aria-hidden="true">JH</span>Job Hunter</Link>
+        <Link href="/" className="brand" aria-label="Job Hunter home"><img src="/icon.svg" alt="" width={32} height={32} style={{ borderRadius: 9, boxShadow: '0 0 0 1px rgba(255,255,255,.18)' }} />Job Hunter</Link>
         <nav className="nav" aria-label="Main">
           {LINKS.map(([href, label]) => (
             <Link key={href} href={href} className={current === href ? 'on' : ''} aria-current={current === href ? 'page' : undefined}>{label}</Link>

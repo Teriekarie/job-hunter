@@ -21,4 +21,4 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|api/cron).*)'] };
+export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icon-512.png|manifest.webmanifest|api/cron).*)'] };
