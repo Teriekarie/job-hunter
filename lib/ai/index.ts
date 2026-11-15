@@ -9,7 +9,7 @@ export type AiSettings = { aiScoreOnSearch?: boolean; aiMonthlyLimitUsd?: number
 export const aiLimit = (sp: AiSettings | undefined) => (typeof sp?.aiMonthlyLimitUsd === 'number' ? sp.aiMonthlyLimitUsd : 3);
 export const aiAllowed = (sp: AiSettings | undefined, spentThisMonth: number) => aiEnabled() && spentThisMonth < aiLimit(sp);
 const SCORE_MODEL = process.env.AI_MODEL_SCORE || 'claude-haiku-5-5';   // cheap, used for scoring many jobs
-const WRITE_MODEL = process.env.AI_MODEL_WRITE || 'claude-sonnet-5-5';  // strong writing at half the Opus price; set AI_MODEL_WRITE=claude-opus-5-5 for the very best
+const WRITE_MODEL = process.env.AI_MODEL_WRITE || 'claude-opus-5-5';    // best writing, used only when she opens a letter/email (≈2–3 US cents each)
 
 // USD per 1M tokens (input, output), for the per-run cost log.
 const PRICES: Record<string, [number, number]> = { 'claude-haiku-5-5': [0.1, 0.5], 'claude-sonnet-5-5': [2, 10], 'claude-opus-5-5': [4, 20] };
