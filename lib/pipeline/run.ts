@@ -1,5 +1,5 @@
 import type { Dropped, Job, RawJob, SearchProfile, SourceStat } from '../types';
-import { collectAll } from '../sources';
+import { addDetails, collectAll } from '../sources';
 import { daysBetween, htmlToText, normCompany, normTitle } from './text';
 import { roleFamilies } from './relevance';
 import { eligibility } from './eligibility';
@@ -62,7 +62,7 @@ export function buildJob(group: RawJob[], ctx: RunContext, now = new Date()): { 
   const sc = ruleScore({ title: g.title, text, families, elig: e, salaryText: g.salaryText, profile: ctx.profile, yearsExperience: yearsOfExperience(ctx.cvText) });
   const key = dedupeKey(g.company, g.title);
   const before = ctx.existing.find((x) => x.dedupe_key === key);
-  const employer = group.find((x) => isEmployerLink(x.sourceUrl));
+  const employerUrl = group.find((x) => x.employerApplyUrl)?.employerApplyUrl ?? group.find((x) => isEmployerLink(x.sourceUrl))?.sourceUrl;
 
   return {
     job: {
@@ -77,7 +77,7 @@ export function buildJob(group: RawJob[], ctx: RunContext, now = new Date()): { 
       salary_text: group.find((x) => x.salaryText)?.salaryText ?? null,
       posted_at: posted ? posted.slice(0, 10) : null, deadline: deadline ? deadline.slice(0, 10) : null,
       is_repost: !!(before?.posted_at && posted && before.posted_at < posted.slice(0, 10)),
-      apply_url: (employer ?? g).sourceUrl,
+      apply_url: employerUrl ?? g.sourceUrl,
       apply_method: how.method, apply_email: how.email ?? null, required_subject: how.subject ?? null,
       role_families: families,
       match_score: sc.score, match_band: sc.band, match_reasons: sc.reasons, gaps: sc.gaps, cv_tips: sc.tips, advice: sc.advice, scored_by: 'rules',
@@ -92,7 +92,11 @@ const rank = (l: string) => ['Worldwide', 'Nigeria eligible', 'Africa eligible',
 // The whole search: collect → keep her kind of roles → merge duplicates → filter → score.
 export async function runSearch(ctx: RunContext, raw?: { jobs: RawJob[]; stats: SourceStat[] }): Promise<RunResult> {
   const { jobs: all, stats } = raw ?? (await collectAll());
-  const relevant = all.filter((j) => roleFamilies(j.title, ctx.profile).length > 0);
+  const known = new Set(ctx.existing.map((e) => e.dedupe_key));
+  const matching = all.filter((j) => roleFamilies(j.title, ctx.profile).length > 0);
+  // Open detail pages only for matching jobs we have not saved before (saves time and is polite to the sites).
+  const relevant = await addDetails(matching.filter((j) => !known.has(dedupeKey(j.company, j.title))))
+    .then((fresh) => [...fresh, ...matching.filter((j) => known.has(dedupeKey(j.company, j.title)))]);
 
   const groups = new Map<string, RawJob[]>();
   for (const j of relevant) {

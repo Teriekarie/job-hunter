@@ -16,6 +16,7 @@ export type RawJob = {
   deadline?: string;         // ISO date
   tags?: string[];
   boardVerified?: boolean;
+  employerApplyUrl?: string; // the employer's own application page, when the board gives it
 };
 
 export type Eligibility = {

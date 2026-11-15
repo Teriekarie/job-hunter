@@ -101,7 +101,7 @@ export default function JobActions({ job, showDetailsLink = true }: { job: CardJ
 
   return (
     <>
-      <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+      <div className="actions">
         {byEmail
           ? <Link className="btn p" href={`/jobs/${job.id}/email`}>Prepare email application</Link>
           : <a className="btn p" href={job.apply_url} target="_blank" rel="noopener noreferrer" onClick={() => setAsked(true)}>Apply on site ↗</a>}
@@ -113,7 +113,7 @@ export default function JobActions({ job, showDetailsLink = true }: { job: CardJ
         {job.status === 'not_a_match' && <button className="btn" disabled={busy} onClick={() => start(() => setStatus(job.id, 'new'))}>Move back to New</button>}
       </div>
       {asked && !applied && (
-        <div className="notice info row" role="status">
+        <div className="notice info row" role="status" style={{ margin: 0 }}>
           <span className="grow">Did you apply for this job?</span>
           <button className="btn p" disabled={busy} onClick={() => start(async () => { await setStatus(job.id, 'applied', 'website'); setAsked(false); })}>Yes, mark as Applied</button>
           <button className="btn" onClick={() => setAsked(false)}>Not yet</button>

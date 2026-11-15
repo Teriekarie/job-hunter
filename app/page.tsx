@@ -18,9 +18,11 @@ export default async function JobsPage() {
   const list = (jobs ?? []).map((j: any) => ({ ...j, source_count: j.jh_job_sources?.[0]?.count ?? 1 })) as BoardJob[];
   const last = runs?.[0] ? { when: fmtDateTime(runs[0].started_at), summary: runs[0].summary ?? '', trigger: runs[0].trigger } : null;
   return (
-    <main className="wrap">
+    <>
       <Nav current="/" />
+      <main className="wrap">
       <JobsBoard jobs={list} lastRun={last} aiOn={aiEnabled()} />
-    </main>
+      </main>
+    </>
   );
 }

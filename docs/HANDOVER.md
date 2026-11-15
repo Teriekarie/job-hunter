@@ -13,7 +13,7 @@
 ## Where things live
 | Path | What |
 |---|---|
-| `lib/sources/` | One file per job board. Add a board: write a file returning `RawJob[]`, add it to `lib/sources/index.ts`. |
+| `lib/sources/` | One file per job board (9: Remotive, Himalayas, Jobicy, Remote OK, We Work Remotely, Arbeitnow, Working Nomads, Workafro, MyJobMag). Add a board: write a file returning `RawJob[]` (plus an optional `detail` reader), add it to `lib/sources/index.ts`. |
 | `lib/pipeline/relevance.ts` | Which titles count as her kind of role. |
 | `lib/pipeline/eligibility.ts` | Can she apply from Nigeria? Board location fields first, then job text. |
 | `lib/pipeline/trust.ts` | Verified / Needs review / High risk, with evidence. |
@@ -45,8 +45,18 @@
 - Live search: all 7 boards answered; ~1,525 jobs → 110 in her role types → 76 dropped (location 60+, too old) → 12 saved.
 - Re-running the search added 0 jobs (no duplicates).
 
+## AI and spending
+- AI is optional (`ANTHROPIC_API_KEY`). Scoring uses Claude Haiku 5.5, letters and emails use Claude Sonnet 5.5 (change with `AI_MODEL_SCORE` / `AI_MODEL_WRITE`).
+- By default AI is used only when she clicks (cover letter, email, "Check fit with AI"). "Score new jobs with AI during each search" is an opt-in on the Profile page.
+- Monthly AI limit (default $3) is enforced in the app: every AI cost is logged (`jh_runs.ai_cost_usd`, `jh_ai_usage`) and the app falls back to rules/templates once the month's total reaches the limit. Also set a spend limit in the Anthropic Console as a second safety net.
+
+## Sources checked and not added (Nov 2026)
+- Jobberman: robots.txt blocks job pages (`/job/`) and searches. Covered by a search shortcut button + "Add a job I found".
+- Jobgurus and Hot Nigerian Jobs: no feed, and their robots.txt blocks AI crawlers. Shortcut buttons only.
+- LinkedIn, Indeed, Glassdoor, Google: no permitted access. Shortcut buttons only.
+- Workafro (allowed, all crawlers welcome) and MyJobMag (job pages allowed, standard JobPosting data) were added.
+
 ## Known limits
-- LinkedIn, Indeed, Jobberman, Jobgurus and Google have no permitted API: covered by search shortcut buttons + "Add a job I found".
 - Himalayas limits free calls; if it is busy the run logs it and carries on. A free Himalayas developer key would raise the limit.
 - Remotive delays its jobs by 24 hours (their rule).
 - Without an AI key, scores use keyword rules and letters are templates with [square bracket] parts to fill.

@@ -213,3 +213,21 @@ begin
 end $$;
 revoke all on function jh_set_cron_hash(text) from public, anon;
 grant execute on function jh_set_cron_hash(text) to authenticated;
+
+-- AI spending log and monthly total (used for the monthly AI limit). Applied as migration job_hunter_ai_usage.
+create table if not exists jh_ai_usage (
+  id uuid primary key default gen_random_uuid(),
+  at timestamptz default now(),
+  kind text not null,
+  cost_usd numeric not null default 0
+);
+alter table jh_ai_usage enable row level security;
+create policy jh_ai_usage_owner on jh_ai_usage for all to authenticated using (jh_is_owner()) with check (jh_is_owner());
+create or replace function jh_ai_spent_month() returns numeric
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select sum(ai_cost_usd) from jh_runs where started_at >= date_trunc('month', now())), 0)
+       + coalesce((select sum(cost_usd) from jh_ai_usage where at >= date_trunc('month', now())), 0);
+$$;
+revoke all on function jh_ai_spent_month() from public, anon;
+grant execute on function jh_ai_spent_month() to authenticated;
+-- jh_run_context was also updated to return 'ai_spent_month'.

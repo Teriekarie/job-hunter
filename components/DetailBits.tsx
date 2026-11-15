@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { saveNotes, setStatus } from '@/app/actions';
+import { aiRescore, saveNotes, setStatus } from '@/app/actions';
 import { STAGES } from '@/lib/types';
 
 export function StageSelect({ jobId, status }: { jobId: string; status: string }) {
@@ -28,5 +28,19 @@ export function Notes({ jobId, initial }: { jobId: string; initial: string }) {
         {saved && <span className="muted small" role="status">Saved</span>}
       </div>
     </>
+  );
+}
+
+// "Check fit with AI": one cheap AI call for this job, only when clicked.
+export function AiCheck({ jobId, scoredBy, aiOn }: { jobId: string; scoredBy: string | null; aiOn: boolean }) {
+  const [msg, setMsg] = useState<{ ok: boolean; message: string } | null>(null);
+  const [busy, start] = useTransition();
+  if (!aiOn) return <p className="muted small" style={{ margin: '10px 0 0' }}>Scored by simple rules (tools, years, role, location). Add an AI key on Profile &amp; rules for an AI check.</p>;
+  return (
+    <div className="row" style={{ marginTop: 10 }}>
+      <span className="muted small grow">{scoredBy === 'ai' ? 'Scored by AI against your CV.' : 'Scored by simple rules (tools, years, role, location).'}</span>
+      <button className="btn" disabled={busy} onClick={() => start(async () => setMsg(await aiRescore(jobId)))}>{busy ? 'Checking…' : scoredBy === 'ai' ? 'Check again with AI' : 'Check fit with AI (≈$0.01)'}</button>
+      {msg && <span role="status" className={`b ${msg.ok ? 'g' : 'r'}`}>{msg.message}</span>}
+    </div>
   );
 }

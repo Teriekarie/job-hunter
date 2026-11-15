@@ -6,11 +6,22 @@ import { db } from '@/lib/supabase/server';
 import { requireOwner } from '@/lib/session';
 import { doRun, ensureProfile, voiceSamples } from '@/lib/run-server';
 import { buildJob, dedupeKey } from '@/lib/pipeline/run';
-import { aiEnabled } from '@/lib/ai';
+import { aiAllowed } from '@/lib/ai';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { aiCoverLetter, aiEmail, aiScore } from '@/lib/ai/prompts';
 import { templateEmail, templateFollowUp, templateLetter } from '@/lib/letters';
 import { fmtDate } from '@/lib/format';
 import { decodeEntities } from '@/lib/pipeline/text';
+
+// May we use the AI right now? (key set, and this month's spend is under her limit)
+async function canUseAi(supabase: SupabaseClient) {
+  const p = await ensureProfile(supabase);
+  const { data: spent } = await supabase.rpc('jh_ai_spent_month');
+  return { ok: aiAllowed(p.search_profile, Number(spent ?? 0)), profile: p };
+}
+async function logAi(supabase: SupabaseClient, kind: string, costUsd: number) {
+  if (costUsd > 0) await supabase.from('jh_ai_usage').insert({ kind, cost_usd: costUsd });
+}
 
 export async function signIn(form: FormData) {
   const supabase = await db();
@@ -72,8 +83,9 @@ export async function getLetter(jobId: string, rewrite = false): Promise<{ text:
   if (!job) return { text: '', by: '' };
   if (job.cover_letter && !rewrite) return { text: job.cover_letter, by: 'saved' };
   let text = templateLetter(job); let by = 'template';
-  if (aiEnabled()) {
-    try { const p = await ensureProfile(supabase); text = (await aiCoverLetter(job, p.cv_text, voiceSamples())).text || text; by = 'ai'; } catch { /* keep the template */ }
+  const ai = await canUseAi(supabase);
+  if (ai.ok) {
+    try { const r = await aiCoverLetter(job, ai.profile.cv_text, voiceSamples()); await logAi(supabase, 'letter', r.costUsd); if (r.text) { text = r.text; by = 'ai'; } } catch { /* keep the template */ }
   }
   await supabase.from('jh_jobs').update({ cover_letter: text }).eq('id', jobId);
   return { text, by };
@@ -90,12 +102,14 @@ export async function getEmail(jobId: string, opts: { rewrite?: boolean; followU
   if (!job) return { subject: '', body: '' };
   if (opts.followUp) {
     const t = templateFollowUp(job, fmtDate(job.applied_at) || 'recently');
-    if (aiEnabled()) { try { const p = await ensureProfile(supabase); const a = await aiEmail(job, p.cv_text, true); if (a) return { subject: t.subject, body: a.body }; } catch { /* template */ } }
+    const ai = await canUseAi(supabase);
+    if (ai.ok) { try { const a = await aiEmail(job, ai.profile.cv_text, true); if (a) { await logAi(supabase, 'follow-up', a.costUsd); return { subject: t.subject, body: a.body }; } } catch { /* template */ } }
     return t;
   }
   if (job.email_body && !opts.rewrite) return { subject: job.email_subject, body: job.email_body };
   let out = templateEmail(job);
-  if (aiEnabled()) { try { const p = await ensureProfile(supabase); const a = await aiEmail(job, p.cv_text); if (a) out = { subject: a.subject, body: a.body }; } catch { /* template */ } }
+  const ai = await canUseAi(supabase);
+  if (ai.ok) { try { const a = await aiEmail(job, ai.profile.cv_text); if (a) { await logAi(supabase, 'email', a.costUsd); out = { subject: a.subject, body: a.body }; } } catch { /* template */ } }
   await supabase.from('jh_jobs').update({ email_subject: out.subject, email_body: out.body }).eq('id', jobId);
   return out;
 }
@@ -136,7 +150,7 @@ export async function addJob(form: FormData): Promise<{ ok: boolean; message: st
       { profile: profile.search_profile, cvText: profile.cv_text, existing: [] }).job!;
     job = { ...loose, description: text.replace(/<[^>]+>/g, ' '), eligibility_label: 'Unclear', eligibility_evidence: `The app's check said: ${built.dropped?.reason}. You added it yourself, so it is kept. Please check before applying.` };
   }
-  if (aiEnabled()) { try { job = (await aiScore([job], profile.cv_text, profile.learned_preferences ?? [])).jobs[0]; } catch { /* rules score stays */ } }
+  if ((await canUseAi(supabase)).ok) { try { const r = await aiScore([job], profile.cv_text, profile.learned_preferences ?? []); job = r.jobs[0]; await logAi(supabase, 'score', r.costUsd); } catch { /* rules score stays */ } }
   const { data: existing } = await supabase.from('jh_jobs').select('id').eq('dedupe_key', dedupeKey(company, title)).maybeSingle();
   if (existing) {
     await supabase.from('jh_job_sources').upsert({ job_id: existing.id, source: 'user_link', source_url: url }, { onConflict: 'job_id,source_url' });
@@ -155,10 +169,31 @@ export async function saveProfile(form: FormData): Promise<{ ok: boolean; messag
   const { supabase } = await requireOwner();
   const current = await ensureProfile(supabase);
   const lines = (k: string) => String(form.get(k) || '').split('\n').map((s) => s.trim()).filter(Boolean);
-  const sp = { ...current.search_profile, avoid: lines('avoid'), freshnessDays: Math.min(60, Math.max(1, Number(form.get('freshnessDays')) || 14)) };
+  const limit = Number(form.get('aiMonthlyLimitUsd'));
+  const sp = { ...current.search_profile, avoid: lines('avoid'), freshnessDays: Math.min(60, Math.max(1, Number(form.get('freshnessDays')) || 14)),
+    aiScoreOnSearch: form.get('aiScoreOnSearch') === 'on', aiMonthlyLimitUsd: Number.isFinite(limit) ? Math.min(100, Math.max(0, limit)) : 3 };
   const cv = String(form.get('cv_text') || '').trim();
   if (cv.length < 200) return { ok: false, message: 'The CV text looks too short.' };
   const { error } = await supabase.from('jh_profile').update({ cv_text: cv, search_profile: sp, learned_preferences: lines('preferences'), updated_at: new Date().toISOString() }).eq('id', 1);
   revalidatePath('/profile');
   return error ? { ok: false, message: error.message } : { ok: true, message: 'Saved.' };
+}
+
+// "Check fit with AI" button on a job: one cheap AI call, only when she clicks.
+export async function aiRescore(jobId: string): Promise<{ ok: boolean; message: string }> {
+  const { supabase } = await requireOwner();
+  const ai = await canUseAi(supabase);
+  if (!ai.ok) return { ok: false, message: "AI is off, or this month's AI limit is reached (see Profile & rules)." };
+  const { data: j } = await supabase.from('jh_jobs').select('*').eq('id', jobId).single();
+  if (!j) return { ok: false, message: 'Job not found.' };
+  try {
+    const r = await aiScore([{ ...j, sources: [] }], ai.profile.cv_text, ai.profile.learned_preferences ?? []);
+    await logAi(supabase, 'score', r.costUsd);
+    const x = r.jobs[0];
+    if (x.scored_by !== 'ai') return { ok: false, message: 'The AI did not return a score. Please try again.' };
+    await supabase.from('jh_jobs').update({ match_score: x.match_score, match_band: x.match_band, match_reasons: x.match_reasons, gaps: x.gaps,
+      cv_tips: x.cv_tips, advice: x.advice, summary: x.summary, scored_by: 'ai', updated_at: new Date().toISOString() }).eq('id', jobId);
+    revalidatePath(`/jobs/${jobId}`); revalidatePath('/');
+    return { ok: true, message: `Scored by AI (cost about $${r.costUsd.toFixed(3)}).` };
+  } catch (e) { return { ok: false, message: `The AI check failed: ${(e as Error).message}` }; }
 }

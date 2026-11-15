@@ -15,10 +15,11 @@ export default async function History() {
     : { data: [] };
   const kind = (r: string) => r.split(':')[0];
   return (
-    <main className="wrap">
+    <>
       <Nav current="/history" />
-      <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <h1 style={{ margin: 0, fontSize: 20 }}>Search history</h1>
+      <main className="wrap">
+      <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <h1 style={{ fontSize: 22 }}>Search history</h1>
         {!runs?.length ? <p className="muted">No searches yet.</p> : (
           <div className="tablebox">
             <table className="t">
@@ -28,7 +29,7 @@ export default async function History() {
                   const bad = ((r.source_stats ?? []) as SourceStat[]).filter((s) => s.error);
                   return (
                     <tr key={r.id}>
-                      <td>{fmtDateTime(r.started_at)}</td><td>{r.trigger === 'daily' ? 'Daily' : 'Button'}</td>
+                      <td>{fmtDateTime(r.started_at)}</td><td>{r.trigger === 'daily' ? 'Daily (6am)' : r.trigger === 'test' ? 'Test run' : 'You clicked'}</td>
                       <td>{r.found}</td><td>{r.merged}</td><td>{r.dropped}</td><td><b>{r.added}</b></td>
                       <td>{bad.length === 0 ? <span className="b g">None</span> : bad.map((s) => <div key={s.source}><span className="b w">{sourceName(s.source)} skipped</span> <span className="muted small">{s.error}</span></div>)}</td>
                     </tr>
@@ -41,7 +42,7 @@ export default async function History() {
         <p className="muted small" style={{ margin: 0 }}>"Found" is every job the boards returned. Most are other professions; only jobs in your role types are checked further.</p>
       </section>
       {latest && (
-        <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 16 }}>Dropped in the latest search ({dropped?.length ?? 0}) and why</h2>
           <div className="tablebox">
             <table className="t">
@@ -59,6 +60,7 @@ export default async function History() {
           <p className="muted small" style={{ margin: 0 }}>If the app got one wrong, open the link and use "Add a job I found" on the Jobs page to keep it.</p>
         </section>
       )}
-    </main>
+      </main>
+    </>
   );
 }

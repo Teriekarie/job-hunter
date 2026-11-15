@@ -5,16 +5,16 @@ const LINKS = [['/', 'Jobs'], ['/tracker', 'Tracker'], ['/history', 'Search hist
 
 export default function Nav({ current }: { current: string }) {
   return (
-    <nav className="row" style={{ justifyContent: 'space-between' }} aria-label="Main">
-      <div className="row" style={{ gap: 20 }}>
-        <span className="display" style={{ fontWeight: 700, fontSize: 20 }}>Job Hunter</span>
-        <div className="row nav" style={{ gap: 4 }}>
+    <header className="topbar">
+      <div className="topbar-in">
+        <Link href="/" className="brand" aria-label="Job Hunter home"><span className="mark" aria-hidden="true">JH</span>Job Hunter</Link>
+        <nav className="nav" aria-label="Main">
           {LINKS.map(([href, label]) => (
             <Link key={href} href={href} className={current === href ? 'on' : ''} aria-current={current === href ? 'page' : undefined}>{label}</Link>
           ))}
-        </div>
+        </nav>
+        <form action={signOut}><button className="btn ghost" style={{ minHeight: 40 }}>Sign out</button></form>
       </div>
-      <form action={signOut}><button className="btn" style={{ minHeight: 36 }}>Sign out</button></form>
-    </nav>
+    </header>
   );
 }

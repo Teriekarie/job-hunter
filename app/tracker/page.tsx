@@ -12,11 +12,12 @@ export default async function Tracker() {
     .not('status', 'in', '(new,not_a_match)').order('applied_at', { ascending: false, nullsFirst: false });
   const rows = data ?? [];
   return (
-    <main className="wrap">
+    <>
       <Nav current="/tracker" />
-      <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <main className="wrap">
+      <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="row" style={{ justifyContent: 'space-between' }}>
-          <h1 style={{ margin: 0, fontSize: 20 }}>My applications</h1>
+          <h1 style={{ fontSize: 22 }}>My applications</h1>
           <a className="btn" href="/api/export">Download as spreadsheet (CSV)</a>
         </div>
         {rows.length === 0 ? <p className="muted">Nothing here yet. Jobs you shortlist or apply to appear in this list.</p> : (
@@ -49,6 +50,7 @@ export default async function Tracker() {
         )}
         <p className="muted small" style={{ margin: 0 }}>A follow-up reminder appears 7 days after applying with no change. A deadline warning appears when a shortlisted job closes within 5 days.</p>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

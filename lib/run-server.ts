@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { runSearch } from './pipeline/run';
-import { aiEnabled } from './ai';
+import { aiAllowed } from './ai';
 import { aiScore } from './ai/prompts';
 import type { Job, SearchProfile } from './types';
 
@@ -39,7 +39,7 @@ export async function doRun(supabase: SupabaseClient, trigger: 'button' | 'daily
 
   // AI scoring only for new jobs, best first, in small batches, and never past the time limit.
   let cost = 0;
-  if (aiEnabled() && fresh.length) {
+  if (fresh.length && profileRow.search_profile?.aiScoreOnSearch === true && aiAllowed(profileRow.search_profile, Number(ctx.ai_spent_month ?? 0))) {
     const scored: Job[] = [];
     for (let i = 0; i < fresh.length; i += 6) {
       const batch = fresh.slice(i, i + 6);

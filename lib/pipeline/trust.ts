@@ -15,7 +15,7 @@ export function trust(sources: RawJob[], text: string, applyEmail?: string): { l
   const checks: string[] = [];
   const flags = RED_FLAGS.filter(([re]) => re.test(text)).map(([, why]) => why);
   const boards = [...new Set(sources.map((s) => s.source))];
-  const employerLink = sources.some((s) => isEmployerLink(s.sourceUrl));
+  const employerLink = sources.some((s) => isEmployerLink(s.sourceUrl) || (s.employerApplyUrl && isEmployerLink(s.employerApplyUrl)));
   const site = sources.find((s) => s.companyWebsite)?.companyWebsite;
 
   if (boards.length >= 2) checks.push(`Good: listed on ${boards.length} independent job boards with matching details`);

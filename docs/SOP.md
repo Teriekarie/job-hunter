@@ -19,6 +19,11 @@
 Use the **Search other sites yourself** buttons at the bottom of the Jobs page. When you find a job, click
 **+ Add a job I found**, paste the link, title, company, location and the job text. It is checked and scored like the others.
 
+## Keeping AI costs low
+- Without an AI key the app is free to run (rules and templates).
+- With a key, AI is only used when you click: **Cover letter**, **Prepare email**, or **Check fit with AI** on a job (about 1–3 US cents each).
+- On **Profile & rules** you can switch on AI scoring for every search (about 1–3 cents a day) and set a **monthly limit** (default $3). When the limit is reached, the app goes back to rules until next month.
+
 ## Weekly
 - **Tracker**: everything you have applied to. A "Time to follow up" badge appears after 7 days with no reply,
   with a ready follow-up email. **Download as spreadsheet** exports it.
