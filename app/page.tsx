@@ -12,7 +12,7 @@ export default async function JobsPage() {
   const { supabase } = await requireOwner();
   await ensureProfile(supabase);
   const [{ data: jobs }, { data: runs }] = await Promise.all([
-    supabase.from('jh_jobs').select('id, title, company, status, apply_url, apply_method, apply_email, summary, advice, match_score, match_band, scored_by, eligibility_label, trust_label, salary_text, posted_at, deadline, location, job_type, seniority, role_families, is_repost, applied_at, found_at, jh_job_sources(count)').order('match_score', { ascending: false }).limit(1000),
+    supabase.from('jh_jobs').select('id, title, company, status, apply_url, apply_method, apply_email, summary, advice, match_score, match_band, scored_by, eligibility_label, trust_label, salary_text, posted_at, deadline, location, job_type, seniority, role_families, is_repost, applied_at, found_at, match_reasons, gaps, jh_job_sources(count)').order('match_score', { ascending: false }).limit(1000),
     supabase.from('jh_runs').select('started_at, summary, trigger').order('started_at', { ascending: false }).limit(1),
   ]);
   const list = (jobs ?? []).map((j: any) => ({ ...j, source_count: j.jh_job_sources?.[0]?.count ?? 1 })) as BoardJob[];

@@ -13,6 +13,7 @@ export type BoardJob = CardJob & {
   eligibility_label: string | null; trust_label: string | null; salary_text: string | null; posted_at: string | null; deadline: string | null;
   location: string | null; job_type: string | null; seniority: string | null; role_families: string[]; is_repost: boolean;
   source_count: number; applied_at: string | null; found_at: string;
+  match_reasons?: string[] | null; gaps?: { gap: string; closable: boolean }[] | null;
 };
 
 const TABS = [['new', 'New'], ['shortlisted', 'Shortlisted'], ['applied', 'Applied'], ['interviewing', 'Interviewing'], ['offer', 'Offer'], ['rejected', 'Rejected'], ['not_a_match', 'Not a match']] as const;
@@ -98,100 +99,120 @@ export default function JobsBoard({ jobs, lastRun, aiOn }: { jobs: BoardJob[]; l
 
   return (
     <>
-      <section className="card tint row" style={{ gap: 16, justifyContent: 'space-between' }}>
-        <div style={{ flex: 1, minWidth: 260 }} className="stack">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span className="small muted">{busy ? 'Working…' : lastRun ? `Last search: ${lastRun.when}${trig}` : 'No search yet'}</span>
-            <h1 style={{ fontSize: 22 }}>{busy ? 'Searching 9 job boards…' : count('new') ? `${count('new')} job${count('new') === 1 ? '' : 's'} waiting for your review` : 'You are all caught up'}</h1>
+      <section className="hero">
+        <div className="row" style={{ gap: 16, justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div className="stack" style={{ gap: 4, flex: 1, minWidth: 260 }}>
+            <span className="small">{busy ? 'Working…' : lastRun ? `Last search: ${lastRun.when}${trig}` : 'No search yet'}</span>
+            <h1>{busy ? 'Searching 9 job boards…' : count('new') ? `${count('new')} job${count('new') === 1 ? '' : 's'} waiting for your review` : 'You are all caught up'}</h1>
+            <span className="muted">{busy ? 'This takes about a minute. Please keep this page open.' : lastRun ? lastRun.summary : 'Click "Find new jobs now" to run your first search.'}</span>
+            <span className="small">A new search runs by itself every day at about 6:00am Lagos time. <Link href="/history">See what was dropped and why</Link></span>
           </div>
-          <span className="muted">{busy ? 'This takes about a minute. Please keep this page open.' : lastRun ? lastRun.summary : 'Click "Find new jobs now" to run your first search.'}</span>
-          <span className="muted small">A new search runs by itself every day at about 6:00am Lagos time. <Link href="/history">See what was dropped and why</Link></span>
+          <div className="row">
+            <button className="btn" onClick={() => setAdding(true)}>+ Add a job I found</button>
+            <button className="btn p big" disabled={busy} onClick={() => start(async () => setResult(await findJobs()))}>{busy ? 'Searching…' : 'Find new jobs now'}</button>
+          </div>
         </div>
-        <div className="row">
-          <button className="btn" onClick={() => setAdding(true)}>+ Add a job I found</button>
-          <button className="btn p big" disabled={busy} onClick={() => start(async () => setResult(await findJobs()))}>{busy ? 'Searching…' : 'Find new jobs now'}</button>
+        <div className="kpis" aria-label="Summary">
+          {stats.map(([label, v]) => <div className="kpi" key={label}><span>{label}</span><b>{v}</b></div>)}
         </div>
       </section>
       {result && <p className={`notice ${result.ok ? 'good' : 'bad'}`} role="status">{result.ok ? 'Search finished. ' : ''}{result.message}</p>}
       {!aiOn && <p className="notice info">Scores and letters use simple rules for now (free). Add an AI key on <Link href="/profile">Profile &amp; rules</Link> for smarter scoring and tailored letters.</p>}
 
-      <section className="stats" aria-label="Summary">
-        {stats.map(([label, v]) => <div className="stat" key={label}><span>{label}</span><b>{v}</b></div>)}
-      </section>
-
-      <div className="card stack" style={{ padding: 12, gap: 10 }}>
-        <div className="row" role="tablist" aria-label="Stages" style={{ gap: 4 }}>
-          {TABS.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={`tab ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>{label}<span className="n">{count(k)}</span></button>)}
-        </div>
-        <div className="row">
-          <label className="sr" htmlFor="f-q">Search jobs</label>
-          <input id="f-q" type="search" className="inp grow" style={{ minWidth: 180 }} placeholder="Search title, company or skill" value={q} onChange={(e) => setQ(e.target.value)} />
-          <label className="sr" htmlFor="f-e">Who can apply</label>
-          <select id="f-e" className="inp" value={elig} onChange={(e) => setElig(e.target.value)}>
-            <option value="">Who can apply: all</option>
-            {['Worldwide', 'Nigeria eligible', 'Africa eligible', 'EMEA', 'Relocation supported', 'Unclear'].map((o) => <option key={o}>{o}</option>)}
-          </select>
-          <label className="sr" htmlFor="f-f">Role type</label>
-          <select id="f-f" className="inp" value={fam} onChange={(e) => setFam(e.target.value)}>
-            <option value="">Role type: all</option>
-            {['Automation', 'Data & BI', 'CRM & RevOps', 'AI & Agents', 'Product & Business Ops', 'Customer Ops'].map((o) => <option key={o}>{o}</option>)}
-          </select>
-          <label className="sr" htmlFor="f-h">How to apply</label>
-          <select id="f-h" className="inp" value={how} onChange={(e) => setHow(e.target.value)}>
-            <option value="">How to apply: all</option><option value="email">By email</option><option value="link">On a website</option>
-          </select>
-          <label className="sr" htmlFor="f-s">Sort</label>
-          <select id="f-s" className="inp" value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="match">Sort: best match</option><option value="newest">Newest</option><option value="deadline">Deadline soonest</option>
-          </select>
-          {filtered && <button className="btn ghost" onClick={() => { setQ(''); setElig(''); setFam(''); setHow(''); }}>Clear filters</button>}
-        </div>
-      </div>
-
-      {shown.length === 0 && <div className="empty">{jobs.length ? (filtered ? 'No jobs match these filters.' : 'Nothing in this stage yet.') : 'No jobs yet. Run your first search.'}</div>}
-      {shown.map((j) => {
-        const left = daysUntil(j.deadline);
-        const follow = j.status === 'applied' && j.applied_at && Date.now() - new Date(j.applied_at).getTime() > 7 * 86400000;
-        return (
-          <article key={j.id} className="card job">
-            <div className="job-top">
-              <span className="ava" aria-hidden="true">{initials(j.company)}</span>
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <h2><Link href={`/jobs/${j.id}`}>{j.title}</Link></h2>
-                <span className="meta">{[j.company, j.location, j.job_type, j.seniority].filter(Boolean).join(' · ')}</span>
-                <div className="row" style={{ gap: 6 }}>
-                  <span className={`b ${eligClass(j.eligibility_label)}`}>{eligText(j.eligibility_label)}</span>
-                  <span className={`b ${trustClass(j.trust_label)}`}>Legit check: {j.trust_label?.toLowerCase()}</span>
-                  <span className="b u">{j.apply_method === 'email' ? 'Apply by email' : 'Apply on website'}</span>
-                  <span className="b">{j.salary_text || 'Salary not listed'}</span>
-                  <span className="b">{postedLabel(j.posted_at)}</span>
-                  {left != null && <span className={`b ${left <= 5 ? 'r' : ''}`}>{left < 0 ? 'Deadline passed' : left === 0 ? 'Closes today' : `Closes in ${left} days`}</span>}
-                  {j.source_count > 1 && <span className="b">On {j.source_count} job boards</span>}
-                  {j.is_repost && <span className="b w">Reposted</span>}
-                  {follow && <span className="b w">Time to follow up</span>}
-                </div>
-              </div>
-              <Score score={j.match_score} band={j.match_band} />
+      <div className="board">
+        <aside className="side" aria-label="Stages and filters">
+          <div className="card">
+            <h4>Stages</h4>
+            <div className="stages" role="tablist" aria-label="Stages">
+              {TABS.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={`stage ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>{label}<span className="n">{count(k)}</span></button>)}
             </div>
-            {j.summary && <p style={{ margin: 0 }}>{j.summary}</p>}
-            {j.advice && <p className={`advice ${j.eligibility_label === 'Unclear' ? 'w' : ''}`}>{j.advice}</p>}
-            <JobActions job={j} />
-          </article>
-        );
-      })}
+          </div>
+          <div className="card stack" style={{ gap: 8 }}>
+            <h4>Filter</h4>
+            <label htmlFor="f-q">Search</label>
+            <input id="f-q" type="search" className="inp" placeholder="Title, company or skill" value={q} onChange={(e) => setQ(e.target.value)} />
+            <label htmlFor="f-e">Who can apply</label>
+            <select id="f-e" className="inp" value={elig} onChange={(e) => setElig(e.target.value)}>
+              <option value="">All</option>
+              {['Worldwide', 'Nigeria eligible', 'Africa eligible', 'EMEA', 'Relocation supported', 'Unclear'].map((o) => <option key={o}>{o}</option>)}
+            </select>
+            <label htmlFor="f-f">Role type</label>
+            <select id="f-f" className="inp" value={fam} onChange={(e) => setFam(e.target.value)}>
+              <option value="">All</option>
+              {['Automation', 'Data & BI', 'CRM & RevOps', 'AI & Agents', 'Product & Business Ops', 'Customer Ops'].map((o) => <option key={o}>{o}</option>)}
+            </select>
+            <label htmlFor="f-h">How to apply</label>
+            <select id="f-h" className="inp" value={how} onChange={(e) => setHow(e.target.value)}>
+              <option value="">All</option><option value="email">By email</option><option value="link">On a website</option>
+            </select>
+            {filtered && <button className="btn ghost" onClick={() => { setQ(''); setElig(''); setFam(''); setHow(''); }}>Clear filters</button>}
+          </div>
+          <div className="card stack" style={{ gap: 8 }}>
+            <h4>Search other sites</h4>
+            <p className="muted small" style={{ margin: 0 }}>These sites do not let apps collect jobs. Open one, then use "+ Add a job I found".</p>
+            <label className="sr" htmlFor="sc-w">Role to search for</label>
+            <select id="sc-w" className="inp" value={word} onChange={(e) => setWord(e.target.value)}>{SHORTCUT_WORDS.map((w) => <option key={w}>{w}</option>)}</select>
+            <div className="row" style={{ gap: 6 }}>
+              {shortcuts(word).map(([name, url]) => <a key={name} className="btn" style={{ minHeight: 36, padding: '0 10px', fontSize: 12 }} href={url} target="_blank" rel="noopener noreferrer">{name} ↗</a>)}
+            </div>
+          </div>
+        </aside>
 
-      <section className="card">
-        <h3>Search other sites yourself</h3>
-        <p className="muted" style={{ margin: '0 0 10px' }}>LinkedIn, Indeed, Jobberman, Jobgurus and Hot Nigerian Jobs do not allow apps to collect their jobs. These buttons open each one already searched. Found something? Click "+ Add a job I found".</p>
-        <div className="row">
-          <label className="sr" htmlFor="sc-w">Role to search for</label>
-          <select id="sc-w" className="inp" value={word} onChange={(e) => setWord(e.target.value)}>{SHORTCUT_WORDS.map((w) => <option key={w}>{w}</option>)}</select>
-          {shortcuts(word).map(([name, url]) => <a key={name} className="btn" href={url} target="_blank" rel="noopener noreferrer">{name} ↗</a>)}
-        </div>
-      </section>
-      <p className="muted small" style={{ margin: 0 }}>
-        Jobs are sourced from <a href="https://remotive.com">Remotive</a>, <a href="https://himalayas.app">Himalayas</a>, <a href="https://jobicy.com">Jobicy</a>, <a href="https://remoteok.com">Remote OK</a>, <a href="https://weworkremotely.com">We Work Remotely</a>, <a href="https://www.arbeitnow.com">Arbeitnow</a>, <a href="https://www.workingnomads.com">Working Nomads</a>, <a href="https://workafro.com">Workafro</a> and <a href="https://www.myjobmag.com">MyJobMag</a>. Each job links back to where it was found.
-      </p>
+        <section className="list" aria-label="Jobs">
+          <div className="listhead">
+            <h2>{TABS.find(([k]) => k === tab)?.[1]} <span className="muted" style={{ fontWeight: 500 }}>· {shown.length}</span></h2>
+            <label className="sr" htmlFor="f-s">Sort</label>
+            <select id="f-s" className="inp" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="match">Best match first</option><option value="newest">Newest first</option><option value="deadline">Deadline soonest</option>
+            </select>
+          </div>
+
+          {shown.length === 0 && <div className="empty">{jobs.length ? (filtered ? 'No jobs match these filters.' : 'Nothing in this stage yet.') : 'No jobs yet. Run your first search.'}</div>}
+          {shown.map((j) => {
+            const left = daysUntil(j.deadline);
+            const follow = j.status === 'applied' && j.applied_at && Date.now() - new Date(j.applied_at).getTime() > 7 * 86400000;
+            const reason = j.match_reasons?.[0];
+            const gap = j.gaps?.[0]?.gap;
+            return (
+              <article key={j.id} className="card job">
+                <div className="job-top">
+                  <span className="ava" aria-hidden="true">{initials(j.company)}</span>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <h2><Link href={`/jobs/${j.id}`}>{j.title}</Link></h2>
+                    <span className="meta">{[j.company, j.job_type, j.seniority].filter(Boolean).join(' · ')}</span>
+                    <div className="row" style={{ gap: 6, marginTop: 2 }}>
+                      <span className={`b ${trustClass(j.trust_label)}`}>Legit check: {j.trust_label?.toLowerCase()}</span>
+                      {j.source_count > 1 && <span className="b">On {j.source_count} job boards</span>}
+                      {left != null && left <= 5 && <span className="b r">{left < 0 ? 'Deadline passed' : left === 0 ? 'Closes today' : `Closes in ${left} days`}</span>}
+                      {j.is_repost && <span className="b w">Reposted</span>}
+                      {follow && <span className="b w">Time to follow up</span>}
+                    </div>
+                  </div>
+                  <Score score={j.match_score} band={j.match_band} />
+                </div>
+                <div className="facts4">
+                  <div><span>Who can apply</span><b className={eligClass(j.eligibility_label)}>{eligText(j.eligibility_label)}</b></div>
+                  <div><span>Salary</span><b title={j.salary_text ?? undefined}>{j.salary_text || 'Not listed'}</b></div>
+                  <div><span>Posted</span><b>{postedLabel(j.posted_at).replace('Posted ', '')}{left != null && left > 5 ? ` · ${left}d left` : ''}</b></div>
+                  <div><span>Apply</span><b>{j.apply_method === 'email' ? 'By email' : 'On website'}</b></div>
+                </div>
+                {j.summary && <p style={{ margin: 0 }}>{j.summary}</p>}
+                {(reason || gap) && (
+                  <div className="why">
+                    {reason && <span><b>Fits:</b> {reason}</span>}
+                    {gap && <span><b>Gap:</b> {gap}</span>}
+                  </div>
+                )}
+                {j.advice && <p className={`advice ${j.eligibility_label === 'Unclear' ? 'w' : ''}`}>{j.advice}</p>}
+                <JobActions job={j} />
+              </article>
+            );
+          })}
+          <p className="muted small" style={{ margin: 0 }}>
+            Jobs are sourced from <a href="https://remotive.com">Remotive</a>, <a href="https://himalayas.app">Himalayas</a>, <a href="https://jobicy.com">Jobicy</a>, <a href="https://remoteok.com">Remote OK</a>, <a href="https://weworkremotely.com">We Work Remotely</a>, <a href="https://www.arbeitnow.com">Arbeitnow</a>, <a href="https://www.workingnomads.com">Working Nomads</a>, <a href="https://workafro.com">Workafro</a> and <a href="https://www.myjobmag.com">MyJobMag</a>. Each job links back to where it was found.
+          </p>
+        </section>
+      </div>
       {adding && <AddJobModal onClose={() => setAdding(false)} />}
     </>
   );
