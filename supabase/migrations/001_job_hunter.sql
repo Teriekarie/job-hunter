@@ -198,3 +198,7 @@ grant execute on function jh_is_owner() to anon, authenticated;
 grant execute on function jh_can_run(text) to anon, authenticated;
 grant execute on function jh_run_context(text) to anon, authenticated;
 grant execute on function jh_run_save(jsonb, text) to anon, authenticated;
+
+-- Tightening (applied as a second migration): helpers are only called from inside the functions above.
+revoke execute on function jh_can_run(text) from anon, authenticated, public;
+revoke execute on function jh_is_owner() from anon, public;
