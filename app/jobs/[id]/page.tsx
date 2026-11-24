@@ -47,7 +47,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             {j.advice && <p className={`advice grow ${j.eligibility_label === 'Unclear' ? 'w' : ''}`}>{j.advice}</p>}
             <StageSelect jobId={j.id} status={j.status} />
           </div>
-          <JobActions job={j} showDetailsLink={false} />
+          <JobActions job={j} showDetailsLink={false} onJobPage />
           {firstSource !== j.apply_url && <a className="small" href={firstSource} target="_blank" rel="noopener noreferrer">View the original listing ↗</a>}
         </header>
 

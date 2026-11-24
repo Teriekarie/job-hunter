@@ -24,6 +24,11 @@ Use the **Search other sites yourself** buttons at the bottom of the Jobs page. 
 - With a key, AI is only used when you click: **Cover letter**, **Prepare email**, or **Check fit with AI** on a job (about 1–3 US cents each).
 - On **Profile & rules** you can switch on AI scoring for every search (about 1–3 cents a day) and set a **monthly limit** (default $3). When the limit is reached, the app goes back to rules until next month.
 
+## Deleting jobs
+- Every job has a **Delete** button (on the card and on the job page). You are asked to confirm first.
+- **Delete expired jobs (N)** appears above the list when jobs have a passed deadline. It deletes them all at once, but keeps jobs you have applied to (they stay in your tracker).
+- Deleted jobs are remembered, so the daily search never brings them back.
+
 ## Weekly
 - **Tracker**: everything you have applied to. A "Time to follow up" badge appears after 7 days with no reply,
   with a ready follow-up email. **Download as spreadsheet** exports it.

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
-import { addJob, findJobs } from '@/app/actions';
+import { addJob, deleteExpiredJobs, findJobs } from '@/app/actions';
 import JobActions, { Modal, type CardJob } from './JobActions';
 import Score from './Score';
 import { daysUntil, eligClass, eligText, initials, postedLabel, trustClass } from '@/lib/format';
@@ -95,6 +95,9 @@ export default function JobsBoard({ jobs, lastRun, aiOn }: { jobs: BoardJob[]; l
   }, [jobs, tab, q, elig, fam, how, sort]);
 
   const filtered = !!(q || elig || fam || how);
+  const today = new Date().toISOString().slice(0, 10);
+  const expired = jobs.filter((j) => j.deadline && j.deadline < today && ['new', 'shortlisted', 'not_a_match'].includes(j.status)).length;
+  const [cleaning, clean] = useTransition();
   const trig = lastRun?.trigger === 'daily' ? ' · daily search' : lastRun?.trigger === 'test' ? ' · test run' : '';
 
   return (
@@ -161,6 +164,14 @@ export default function JobsBoard({ jobs, lastRun, aiOn }: { jobs: BoardJob[]; l
         <section className="list" aria-label="Jobs">
           <div className="listhead">
             <h2>{TABS.find(([k]) => k === tab)?.[1]} <span className="muted" style={{ fontWeight: 500 }}>· {shown.length}</span></h2>
+            <span className="grow" />
+            {expired > 0 && (
+              <button className="btn danger" disabled={cleaning}
+                onClick={() => {
+                  if (!window.confirm(`Delete ${expired} job${expired === 1 ? '' : 's'} whose deadline has passed?\n\nJobs you already applied to are kept in your tracker.`)) return;
+                  clean(async () => setResult(await deleteExpiredJobs()));
+                }}>{cleaning ? 'Deleting…' : `Delete expired jobs (${expired})`}</button>
+            )}
             <label className="sr" htmlFor="f-s">Sort</label>
             <select id="f-s" className="inp" value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="match">Best match first</option><option value="newest">Newest first</option><option value="deadline">Deadline soonest</option>

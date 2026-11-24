@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
-import { getLetter, notAMatch, saveLetter, setStatus } from '@/app/actions';
+import { deleteJob, getLetter, notAMatch, saveLetter, setStatus } from '@/app/actions';
+import { useRouter } from 'next/navigation';
 
 export type CardJob = {
   id: string; title: string; company: string; status: string; apply_url: string; apply_method: string; apply_email: string | null;
@@ -94,7 +95,24 @@ function NotMatchModal({ job, onClose }: { job: CardJob; onClose: () => void }) 
   );
 }
 
-export default function JobActions({ job, showDetailsLink = true }: { job: CardJob; showDetailsLink?: boolean }) {
+// Delete with a confirmation. Used on job cards and on the job page.
+export function DeleteButton({ job, after }: { job: { id: string; title: string; company: string }; after?: 'back' }) {
+  const router = useRouter();
+  const [busy, start] = useTransition();
+  return (
+    <button className="btn danger" disabled={busy} aria-label={`Delete ${job.title}`}
+      onClick={() => {
+        if (!window.confirm(`Delete "${job.title}" at ${job.company}?\n\nIt will be removed for good and will not come back in future searches.`)) return;
+        start(async () => {
+          const r = await deleteJob(job.id);
+          if (!r.ok) { window.alert(r.message); return; }
+          if (after === 'back') router.push('/'); else router.refresh();
+        });
+      }}>{busy ? 'Deleting…' : 'Delete'}</button>
+  );
+}
+
+export default function JobActions({ job, showDetailsLink = true, onJobPage = false }: { job: CardJob; showDetailsLink?: boolean; onJobPage?: boolean }) {
   const [asked, setAsked] = useState(false);
   const [modal, setModal] = useState<'letter' | 'nm' | null>(null);
   const [busy, start] = useTransition();
@@ -113,6 +131,7 @@ export default function JobActions({ job, showDetailsLink = true }: { job: CardJ
         <span className="grow" />
         {job.status !== 'not_a_match' && !applied && <button className="btn danger" onClick={() => setModal('nm')}>Not a match</button>}
         {job.status === 'not_a_match' && <button className="btn" disabled={busy} onClick={() => start(() => setStatus(job.id, 'new'))}>Move back to New</button>}
+        <DeleteButton job={job} after={onJobPage ? 'back' : undefined} />
       </div>
       {asked && !applied && (
         <div className="notice info row" role="status" style={{ margin: 0 }}>

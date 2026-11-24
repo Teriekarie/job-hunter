@@ -206,3 +206,32 @@ export async function aiRescore(jobId: string): Promise<{ ok: boolean; message: 
     return { ok: true, message: `Scored by AI (cost about $${r.costUsd.toFixed(3)}).` };
   } catch (e) { return { ok: false, message: `The AI check failed: ${(e as Error).message}` }; }
 }
+
+// Delete jobs for good. They are remembered in jh_deleted_jobs so the search never brings them back.
+async function removeJobs(supabase: SupabaseClient, ids: string[]) {
+  if (!ids.length) return 0;
+  const { data: rows } = await supabase.from('jh_jobs').select('id, dedupe_key, title, company').in('id', ids);
+  if (!rows?.length) return 0;
+  await supabase.from('jh_deleted_jobs').upsert(rows.map((r) => ({ dedupe_key: r.dedupe_key, title: r.title, company: r.company })), { onConflict: 'dedupe_key' });
+  const { error } = await supabase.from('jh_jobs').delete().in('id', rows.map((r) => r.id));
+  if (error) throw new Error(error.message);
+  revalidatePath('/'); revalidatePath('/tracker');
+  return rows.length;
+}
+
+export async function deleteJob(jobId: string): Promise<{ ok: boolean; message: string }> {
+  const { supabase } = await requireOwner();
+  try { const n = await removeJobs(supabase, [jobId]); return n ? { ok: true, message: 'Job deleted.' } : { ok: false, message: 'Job not found.' }; }
+  catch (e) { return { ok: false, message: `Could not delete: ${(e as Error).message}` }; }
+}
+
+// Deletes every job whose deadline has passed, except ones she has already applied to (those stay in her tracker).
+export async function deleteExpiredJobs(): Promise<{ ok: boolean; message: string }> {
+  const { supabase } = await requireOwner();
+  const today = new Date().toISOString().slice(0, 10);
+  const { data } = await supabase.from('jh_jobs').select('id').lt('deadline', today).in('status', ['new', 'shortlisted', 'not_a_match']);
+  try {
+    const n = await removeJobs(supabase, (data ?? []).map((r) => r.id));
+    return { ok: true, message: n ? `Deleted ${n} job${n === 1 ? '' : 's'} with a passed deadline.` : 'No jobs with a passed deadline.' };
+  } catch (e) { return { ok: false, message: `Could not delete: ${(e as Error).message}` }; }
+}
