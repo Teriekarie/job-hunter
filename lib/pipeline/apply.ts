@@ -16,5 +16,5 @@ export function applyMethod(text: string): { method: 'link' | 'email'; email?: s
   return { method: 'link' };
 }
 
-const ATS = /(jobs\.workable\.com|apply\.workable\.com|greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|smartrecruiters\.com|bamboohr\.com|recruitee\.com|teamtailor\.com|myworkdayjobs\.com|breezy\.hr|jobvite\.com|icims\.com|personio\.)/i;
+const ATS = /(gh_jid=|jobs\.workable\.com|apply\.workable\.com|greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|smartrecruiters\.com|bamboohr\.com|recruitee\.com|teamtailor\.com|myworkdayjobs\.com|breezy\.hr|jobvite\.com|icims\.com|personio\.)/i;
 export const isEmployerLink = (url: string) => ATS.test(url);

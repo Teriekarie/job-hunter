@@ -1,6 +1,6 @@
 // One shape for every job, whichever board it came from.
 export type RawJob = {
-  source: string;            // remotive | himalayas | jobicy | remoteok | wwr | arbeitnow | workingnomads | user_link
+  source: string;            // remotive | himalayas | jobicy | remoteok | arbeitnow | workingnomads | workafro | myjobmag | employer | user_link
   sourceUrl: string;         // link back to the board (required by the boards' terms)
   title: string;
   company: string;
@@ -17,6 +17,7 @@ export type RawJob = {
   tags?: string[];
   boardVerified?: boolean;
   employerApplyUrl?: string; // the employer's own application page, when the board gives it
+  detailRef?: string;        // where to fetch the full job (company hiring pages)
 };
 
 export type Eligibility = {

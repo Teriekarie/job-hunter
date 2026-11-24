@@ -31,7 +31,7 @@ export async function doRun(supabase: SupabaseClient, trigger: 'button' | 'daily
   const { data: ctx, error } = await supabase.rpc('jh_run_context', { p_secret: secret });
   if (error) throw new Error(error.message);
   const profileRow = ctx.profile ?? { ...defaultProfile(), learned_preferences: [] };
-  const result = await runSearch({ profile: profileRow.search_profile, cvText: profileRow.cv_text, existing: ctx.existing });
+  const result = await runSearch({ profile: profileRow.search_profile, cvText: profileRow.cv_text, existing: ctx.existing, companies: ctx.companies ?? [] });
 
   const known = new Set<string>((ctx.existing as { dedupe_key: string }[]).map((e) => e.dedupe_key));
   let fresh = result.jobs.filter((j) => !known.has(j.dedupe_key));
@@ -54,7 +54,7 @@ export async function doRun(supabase: SupabaseClient, trigger: 'button' | 'daily
   const summary = `${result.stats.length - failed.length} of ${result.stats.length} sources searched · ${result.found} jobs found · ${result.relevant} in your role types · ${result.dropped.length} dropped · ${fresh.length} new for you`;
   const payload = {
     trigger, status: failed.length === result.stats.length ? 'failed' : 'done', found: result.found, merged: result.merged,
-    source_stats: result.stats, ai_cost_usd: cost, summary, dropped: result.dropped,
+    source_stats: result.stats, ai_cost_usd: cost, summary, dropped: result.dropped, discovered: result.discovered,
     jobs: [...fresh, ...seenAgain.map((j) => ({ dedupe_key: j.dedupe_key, sources: j.sources }))],
   };
   const { data: saved, error: e2 } = await supabase.rpc('jh_run_save', { p_payload: payload, p_secret: secret });

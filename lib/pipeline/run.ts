@@ -1,5 +1,6 @@
 import type { Dropped, Job, RawJob, SearchProfile, SourceStat } from '../types';
 import { addDetails, collectAll } from '../sources';
+import { findBoards, type Board } from '../sources/employers';
 import { daysBetween, htmlToText, normCompany, normTitle } from './text';
 import { roleFamilies } from './relevance';
 import { eligibility } from './eligibility';
@@ -11,8 +12,9 @@ export type RunContext = {
   profile: SearchProfile;
   cvText: string;
   existing: { dedupe_key: string; posted_at: string | null }[];
+  companies?: Board[];
 };
-export type RunResult = { jobs: Job[]; dropped: Dropped[]; stats: SourceStat[]; found: number; merged: number; relevant: number };
+export type RunResult = { jobs: Job[]; dropped: Dropped[]; stats: SourceStat[]; found: number; merged: number; relevant: number; discovered: Board[] };
 
 const CLOSED = /\b(no longer accepting applications|position (has been|is) (filled|closed)|this (job|role|position) (is|has been) (closed|filled)|applications (are )?(now )?closed)\b/i;
 
@@ -91,7 +93,7 @@ const rank = (l: string) => ['Worldwide', 'Nigeria eligible', 'Africa eligible',
 
 // The whole search: collect → keep her kind of roles → merge duplicates → filter → score.
 export async function runSearch(ctx: RunContext, raw?: { jobs: RawJob[]; stats: SourceStat[] }): Promise<RunResult> {
-  const { jobs: all, stats } = raw ?? (await collectAll());
+  const { jobs: all, stats } = raw ?? (await collectAll(ctx.companies ?? []));
   const known = new Set(ctx.existing.map((e) => e.dedupe_key));
   const matching = all.filter((j) => roleFamilies(j.title, ctx.profile).length > 0);
   // Open detail pages only for matching jobs we have not saved before (saves time and is polite to the sites).
@@ -107,8 +109,12 @@ export async function runSearch(ctx: RunContext, raw?: { jobs: RawJob[]; stats: 
   const dropped: Dropped[] = [];
   for (const group of groups.values()) {
     const r = buildJob(group, ctx);
-    if (r.job) jobs.push(r.job); else if (r.dropped) dropped.push(r.dropped);
+    // Company pages list hundreds of jobs that are old or for other countries; only the job sites' drops are worth showing.
+    if (r.job) jobs.push(r.job); else if (r.dropped && r.dropped.source !== 'employer') dropped.push(r.dropped);
   }
   jobs.sort((a, b) => b.match_score - a.match_score);
-  return { jobs, dropped, stats, found: all.length, merged: relevant.length - groups.size, relevant: relevant.length };
+  // Companies seen on job sites with their own hiring page: add them to the watch list for next time.
+  const watched = new Set((ctx.companies ?? []).map((b) => `${b.ats}:${b.slug}`));
+  const discovered = findBoards(all).filter((b) => !watched.has(`${b.ats}:${b.slug}`));
+  return { jobs, dropped, stats, found: all.length, merged: relevant.length - groups.size, relevant: relevant.length, discovered };
 }

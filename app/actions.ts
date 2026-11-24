@@ -235,3 +235,27 @@ export async function deleteExpiredJobs(): Promise<{ ok: boolean; message: strin
     return { ok: true, message: n ? `Deleted ${n} job${n === 1 ? '' : 's'} with a passed deadline.` : 'No jobs with a passed deadline.' };
   } catch (e) { return { ok: false, message: `Could not delete: ${(e as Error).message}` }; }
 }
+
+// ---------- companies checked directly (their own hiring pages) ----------
+export async function addCompany(form: FormData): Promise<{ ok: boolean; message: string }> {
+  const { supabase } = await requireOwner();
+  const { boardFromUrl } = await import('@/lib/sources/employers');
+  const url = String(form.get('url') || '').trim();
+  const name = String(form.get('name') || '').trim();
+  const b = boardFromUrl(url, name);
+  if (!b) return { ok: false, message: 'That link is not from Greenhouse, Lever, Ashby, Workable or SmartRecruiters, so the app cannot read it directly. Open one of the company\'s jobs and paste that link instead.' };
+  const { employers } = await import('@/lib/sources/employers');
+  const r = await employers([b]);
+  if (r.failed.length) return { ok: false, message: `Could not read ${name}'s hiring page. Please check the link.` };
+  const { error } = await supabase.from('jh_companies').upsert({ ats: b.ats, slug: b.slug, name, added_by: 'you', active: true }, { onConflict: 'ats,slug' });
+  if (error) return { ok: false, message: error.message };
+  revalidatePath('/profile');
+  return { ok: true, message: `${name} added. ${r.jobs.length} open job${r.jobs.length === 1 ? '' : 's'} right now; matching ones appear after the next search.` };
+}
+
+export async function setCompanyActive(ats: string, slug: string, active: boolean): Promise<{ ok: boolean; message: string }> {
+  const { supabase } = await requireOwner();
+  const { error } = await supabase.from('jh_companies').update({ active }).eq('ats', ats).eq('slug', slug);
+  revalidatePath('/profile');
+  return error ? { ok: false, message: error.message } : { ok: true, message: active ? 'Company will be checked again.' : 'Company removed from the daily check.' };
+}

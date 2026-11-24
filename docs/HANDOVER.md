@@ -45,6 +45,12 @@
 - Live search: all 7 boards answered; ~1,525 jobs → 110 in her role types → 76 dropped (location 60+, too old) → 12 saved.
 - Re-running the search added 0 jobs (no duplicates).
 
+## Companies checked directly
+- `lib/sources/employers.ts` reads public job-board APIs of Greenhouse, Lever, Ashby, Workable and SmartRecruiters for every active row in `jh_companies` (107 starter companies, verified Nov 2026; list in `lib/sources/starter-companies.json`, seeded by `supabase/migrations/003_companies.sql`).
+- Only matching titles get a detail fetch (max 160 per run, newest first). Workable is read one company at a time (it rate-limits).
+- Discovery: board links found in job-site data are added to `jh_companies` as `auto`; job-level links found in descriptions become the apply link.
+- Company jobs that are only city/office based (no "remote") are treated as location-locked unless the text offers relocation.
+
 ## AI and spending
 - AI is optional (`ANTHROPIC_API_KEY`). Scoring uses Claude Haiku 5.5 (fast, very cheap); letters and emails use Claude Sonnet 5.5 (cheaper; set `AI_MODEL_WRITE=claude-opus-5-5` for the very best) (change with `AI_MODEL_SCORE` / `AI_MODEL_WRITE`).
 - By default AI is used only when she clicks (cover letter, email, "Check fit with AI"). "Score new jobs with AI during each search" is an opt-in on the Profile page.

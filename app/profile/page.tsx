@@ -1,5 +1,6 @@
 import Nav from '@/components/Nav';
 import { PasswordForm, ProfileForm } from '@/components/ProfileForms';
+import CompaniesPanel, { type Company } from '@/components/CompaniesPanel';
 import { requireOwner } from '@/lib/session';
 import { ensureProfile } from '@/lib/run-server';
 import { aiEnabled, aiLimit } from '@/lib/ai';
@@ -10,9 +11,10 @@ export const dynamic = 'force-dynamic';
 export default async function Profile() {
   const { supabase, user } = await requireOwner();
   const p = await ensureProfile(supabase);
-  const [{ data: fb }, { data: spent }] = await Promise.all([
+  const [{ data: fb }, { data: spent }, { data: companies }] = await Promise.all([
     supabase.from('jh_feedback').select('reasons'),
     supabase.rpc('jh_ai_spent_month'),
+    supabase.from('jh_companies').select('ats, slug, name, added_by, active'),
   ]);
   const tally: Record<string, number> = {};
   (fb ?? []).forEach((f) => (f.reasons as string[]).forEach((r) => (tally[r] = (tally[r] || 0) + 1)));
@@ -37,12 +39,13 @@ export default async function Profile() {
               <li>Location: {sp.location}. Work rights: {sp.workAuthorization}.</li>
               <li>Shown in this order: {(sp.eligibilityPriority as string[]).join(' → ')}. Jobs that exclude Nigeria are dropped.</li>
               <li>Salary: every job is shown, even with no pay listed.</li>
-              <li>Sources ({SOURCES.length}): {SOURCES.map((s) => s.name).join(', ')}.</li>
+              <li>Job sites ({SOURCES.length}): {SOURCES.map((s) => s.name).join(', ')}. Plus {(companies ?? []).filter((c) => c.active).length} companies checked directly (below).</li>
             </ul>
             <h3 style={{ marginTop: 14 }}>Your "Not a match" reasons so far</h3>
             {Object.keys(tally).length ? <ul>{Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([r, n]) => <li key={r}>{r}: {n}</li>)}</ul> : <p className="muted" style={{ margin: 0 }}>None yet.</p>}
           </section>
         </div>
+        <CompaniesPanel companies={(companies ?? []) as Company[]} />
         <ProfileForm cv={p.cv_text} avoid={(sp.avoid ?? []).join('\n')} preferences={(p.learned_preferences ?? []).join('\n')} freshnessDays={sp.freshnessDays ?? 14}
           aiKey={aiEnabled()} aiScoreOnSearch={sp.aiScoreOnSearch === true} aiMonthlyLimitUsd={aiLimit(sp)} aiSpent={Number(spent ?? 0)} />
         {!aiEnabled() && (

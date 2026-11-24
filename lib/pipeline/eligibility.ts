@@ -64,5 +64,8 @@ export function eligibility(job: RawJob, text: string): Eligibility {
     return { label: 'Nigeria eligible', evidence: 'The job text names Nigeria as an accepted location.' };
   if (TEXT_WORLDWIDE.test(text)) return { label: 'Worldwide', evidence: 'The job text says it is open to applicants anywhere.' };
   if (loc && TZ_OK.test(loc)) return { label: 'Unclear', evidence: `Only a timezone is given ("${job.locationText}"), which fits Lagos (UTC+1). No country rule is stated.` };
+  // Only a city or office is named (e.g. "San Francisco", "Zürich", "New York HQ"): that means "be based there".
+  if (loc && !/\b(remote|anywhere|global|worldwide|distributed|home based|home|flexible|multiple locations)\b/.test(loc))
+    return { label: 'Ineligible', evidence: `Based in ${job.locationText}; the posting does not say people outside that area can apply.` };
   return { label: 'Unclear', evidence: loc ? `The location is given as "${job.locationText}", which does not say who can apply.` : 'The posting says remote but does not say which countries can apply.' };
 }

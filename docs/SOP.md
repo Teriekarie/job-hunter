@@ -24,6 +24,11 @@ Use the **Search other sites yourself** buttons at the bottom of the Jobs page. 
 - With a key, AI is only used when you click: **Cover letter**, **Prepare email**, or **Check fit with AI** on a job (about 1–3 US cents each).
 - On **Profile & rules** you can switch on AI scoring for every search (about 1–3 cents a day) and set a **monthly limit** (default $3). When the limit is reached, the app goes back to rules until next month.
 
+## Jobs straight from companies
+- Besides the job sites, the app reads about 100 companies' own hiring pages every day (Greenhouse, Lever, Ashby, Workable, SmartRecruiters). These jobs show **Apply: On company site** and open the company's own form, which normally needs no account.
+- On **Profile & rules → Companies checked directly** you can add a company (paste a link to one of its jobs), or remove one. Companies that appear on job sites are added automatically.
+- Jobs that still go through a job site show **Apply: Via (site name)**.
+
 ## Deleting jobs
 - Every job has a **Delete** button (on the card and on the job page). You are asked to confirm first.
 - **Delete expired jobs (N)** appears above the list when jobs have a passed deadline. It deletes them all at once, but keeps jobs you have applied to (they stay in your tracker).

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { addJob, deleteExpiredJobs, findJobs } from '@/app/actions';
 import JobActions, { Modal, type CardJob } from './JobActions';
+import { isEmployerLink } from '@/lib/pipeline/apply';
 import Score from './Score';
 import { daysUntil, eligClass, eligText, initials, postedLabel, trustClass } from '@/lib/format';
 
@@ -205,7 +206,9 @@ export default function JobsBoard({ jobs, lastRun, aiOn }: { jobs: BoardJob[]; l
                   <div><span>Who can apply</span><b className={eligClass(j.eligibility_label)}>{eligText(j.eligibility_label)}</b></div>
                   <div><span>Salary</span><b title={j.salary_text ?? undefined}>{j.salary_text || 'Not listed'}</b></div>
                   <div><span>Posted</span><b>{postedLabel(j.posted_at).replace('Posted ', '')}{left != null && left > 5 ? ` · ${left}d left` : ''}</b></div>
-                  <div><span>Apply</span><b>{j.apply_method === 'email' ? 'By email' : 'On website'}</b></div>
+                  <div><span>Apply</span>{j.apply_method === 'email' ? <b>By email</b>
+                    : isEmployerLink(j.apply_url) ? <b className="g">On company site</b>
+                    : <b className="w" title={j.apply_url}>Via {(() => { try { return new URL(j.apply_url).hostname.replace(/^www\./, ''); } catch { return 'job site'; } })()}</b>}</div>
                 </div>
                 {j.summary && <p style={{ margin: 0 }}>{j.summary}</p>}
                 {(reason || gap) && (
