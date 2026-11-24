@@ -3,7 +3,6 @@ import { remotive } from './remotive';
 import { himalayas } from './himalayas';
 import { jobicy } from './jobicy';
 import { remoteok } from './remoteok';
-import { wwr } from './wwr';
 import { arbeitnow } from './arbeitnow';
 import { workingnomads } from './workingnomads';
 import { workafro, workafroDetail } from './workafro';
@@ -17,7 +16,6 @@ export const SOURCES: { id: string; name: string; home: string; fetch: () => Pro
   { id: 'himalayas', name: 'Himalayas', home: 'https://himalayas.app', fetch: himalayas },
   { id: 'jobicy', name: 'Jobicy', home: 'https://jobicy.com', fetch: jobicy },
   { id: 'remoteok', name: 'Remote OK', home: 'https://remoteok.com', fetch: remoteok },
-  { id: 'wwr', name: 'We Work Remotely', home: 'https://weworkremotely.com', fetch: wwr },
   { id: 'arbeitnow', name: 'Arbeitnow', home: 'https://www.arbeitnow.com', fetch: arbeitnow },
   { id: 'workingnomads', name: 'Working Nomads', home: 'https://www.workingnomads.com', fetch: workingnomads },
   { id: 'workafro', name: 'Workafro', home: 'https://workafro.com', fetch: workafro, detail: workafroDetail },
@@ -34,8 +32,10 @@ export async function addDetails(jobs: RawJob[], limit = 40): Promise<RawJob[]> 
   return jobs.map((j) => done.get(j) ?? j);
 }
 
-export const sourceName = (id: string) =>
-  SOURCES.find((s) => s.id === id)?.name ?? (id === 'user_link' ? 'Added by you' : id);
+// Boards no longer searched, kept so older jobs still show a readable name.
+// We Work Remotely was removed in Nov 2026: its apply links always went through WWR, never to the employer.
+const RETIRED: Record<string, string> = { wwr: 'We Work Remotely', user_link: 'Added by you' };
+export const sourceName = (id: string) => SOURCES.find((s) => s.id === id)?.name ?? RETIRED[id] ?? id;
 
 // Pull from every board at the same time. If one board fails, the others still count.
 export async function collectAll(): Promise<{ jobs: RawJob[]; stats: SourceStat[] }> {

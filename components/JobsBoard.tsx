@@ -106,7 +106,7 @@ export default function JobsBoard({ jobs, lastRun, aiOn }: { jobs: BoardJob[]; l
         <div className="row" style={{ gap: 16, justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div className="stack" style={{ gap: 4, flex: 1, minWidth: 260 }}>
             <span className="small">{busy ? 'Working…' : lastRun ? `Last search: ${lastRun.when}${trig}` : 'No search yet'}</span>
-            <h1>{busy ? 'Searching 9 job boards…' : count('new') ? `${count('new')} job${count('new') === 1 ? '' : 's'} waiting for your review` : 'You are all caught up'}</h1>
+            <h1>{busy ? 'Searching 8 job boards…' : count('new') ? `${count('new')} job${count('new') === 1 ? '' : 's'} waiting for your review` : 'You are all caught up'}</h1>
             <span className="muted">{busy ? 'This takes about a minute. Please keep this page open.' : lastRun ? lastRun.summary : 'Click "Find new jobs now" to run your first search.'}</span>
             <span className="small">A new search runs by itself every day at about 6:00am Lagos time. <Link href="/history">See what was dropped and why</Link></span>
           </div>
@@ -220,7 +220,7 @@ export default function JobsBoard({ jobs, lastRun, aiOn }: { jobs: BoardJob[]; l
             );
           })}
           <p className="muted small" style={{ margin: 0 }}>
-            Jobs are sourced from <a href="https://remotive.com">Remotive</a>, <a href="https://himalayas.app">Himalayas</a>, <a href="https://jobicy.com">Jobicy</a>, <a href="https://remoteok.com">Remote OK</a>, <a href="https://weworkremotely.com">We Work Remotely</a>, <a href="https://www.arbeitnow.com">Arbeitnow</a>, <a href="https://www.workingnomads.com">Working Nomads</a>, <a href="https://workafro.com">Workafro</a> and <a href="https://www.myjobmag.com">MyJobMag</a>. Each job links back to where it was found.
+            Jobs are sourced from <a href="https://remotive.com">Remotive</a>, <a href="https://himalayas.app">Himalayas</a>, <a href="https://jobicy.com">Jobicy</a>, <a href="https://remoteok.com">Remote OK</a>, <a href="https://www.arbeitnow.com">Arbeitnow</a>, <a href="https://www.workingnomads.com">Working Nomads</a>, <a href="https://workafro.com">Workafro</a> and <a href="https://www.myjobmag.com">MyJobMag</a>. Each job links back to where it was found.
           </p>
         </section>
       </div>

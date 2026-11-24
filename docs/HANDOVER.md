@@ -13,7 +13,7 @@
 ## Where things live
 | Path | What |
 |---|---|
-| `lib/sources/` | One file per job board (9: Remotive, Himalayas, Jobicy, Remote OK, We Work Remotely, Arbeitnow, Working Nomads, Workafro, MyJobMag). Add a board: write a file returning `RawJob[]` (plus an optional `detail` reader), add it to `lib/sources/index.ts`. |
+| `lib/sources/` | One file per job board (8: Remotive, Himalayas, Jobicy, Remote OK, Arbeitnow, Working Nomads, Workafro, MyJobMag). We Work Remotely was removed in Nov 2026 (apply links always went through WWR, never the employer); `wwr.ts` was deleted. Add a board: write a file returning `RawJob[]` (plus an optional `detail` reader), add it to `lib/sources/index.ts`. |
 | `lib/pipeline/relevance.ts` | Which titles count as her kind of role. |
 | `lib/pipeline/eligibility.ts` | Can she apply from Nigeria? Board location fields first, then job text. |
 | `lib/pipeline/trust.ts` | Verified / Needs review / High risk, with evidence. |
